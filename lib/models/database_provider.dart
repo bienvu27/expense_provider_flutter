@@ -1,9 +1,15 @@
+import 'package:expense_provider_flutter/models/ex_category.dart';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../contants/icons.dart';
 
-class DatabaseProvider {
+class DatabaseProvider with ChangeNotifier {
+  List<ExpenseCategory> _categories = [];
+
+  List<ExpenseCategory> get categories => _categories;
+
   Database? _database;
 
   Future<Database> get database async {
@@ -42,6 +48,22 @@ class DatabaseProvider {
           'totalAmount': (0.0).toString(),
         });
       }
+    });
+  }
+
+  Future<List<ExpenseCategory>> fetchCategories() async {
+    final db = await database;
+    return await db.transaction((txn) async {
+      return await txn.query(cTable).then((data) {
+        final converted = List<Map<String, dynamic>>.from(data);
+
+        List<ExpenseCategory> nList = List.generate(converted.length,
+            (index) => ExpenseCategory.fromString(converted[index]));
+
+        _categories = nList;
+
+        return _categories;
+      });
     });
   }
 }
